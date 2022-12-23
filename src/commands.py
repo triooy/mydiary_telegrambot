@@ -17,6 +17,7 @@ def daily(update: Update, context: CallbackContext, config):
                 name=str(chat_id),
         )
         context.bot.send_message(chat_id=chat_id, text="Daily memory set!")
+        delete_message(context, update.message.chat_id, update.message.message_id)
 
 def daily_job(context: CallbackContext, config) -> None:
     job = context.job
@@ -38,7 +39,13 @@ def daily_job(context: CallbackContext, config) -> None:
         image = random.choice(images)
         with open(Path(config.get('image_dir')) / Path(image), 'rb') as f:   
             context.bot.send_photo(job.context, photo=f)
+    
         
+def delete_message(context: CallbackContext, chat_id, message_id):
+    context.bot.delete_message(
+        chat_id=chat_id, message_id=message_id,
+    )
+    
 def get_random_entry(update: Update, context: CallbackContext, config):
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
@@ -52,6 +59,7 @@ def get_random_entry(update: Update, context: CallbackContext, config):
             for image in images:
                 with open(Path(config.get('image_dir')) / Path(image), 'rb') as f:   
                     context.bot.send_photo(chat_id=chat_id, photo=f)
+        delete_message(context, update.message.chat_id, update.message.message_id)
         
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
     """Remove job with given name. Returns whether job was removed."""
