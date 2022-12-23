@@ -1,8 +1,8 @@
 from pyhocon import ConfigFactory
 from pathlib import Path
 import sys 
-sys.path.append('mydiary_telegrambot/')
-from src.diary import *
+from diary import *
+import commands
 from functools import partial
 
 from telegram.ext import (
@@ -19,7 +19,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-config = ConfigFactory.parse_file(Path('mydiary_telegrambot/config/config.conf'))
+config = ConfigFactory.parse_file(Path('config/config.conf'))
 api_key = config.get('api_key')
 
 def main():
@@ -27,6 +27,9 @@ def main():
     updater = Updater(api_key, use_context=True)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, partial(process_new_text, config=config)))
+    dispatcher.add_handler(CommandHandler("daily", partial(commands.daily, config=config)))
+    dispatcher.add_handler(CommandHandler("random", partial(commands.get_random_entry, config=config)))
+    dispatcher.add_handler(MessageHandler(Filters.photo, partial(process_new_photo, config=config)))
     updater.start_polling()
     logger.info("Bot started")
     updater.idle()
