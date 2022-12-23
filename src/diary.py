@@ -102,5 +102,7 @@ def process_new_photo(update: Update, context: CallbackContext, config):
 
 def correct_chat(chat_id, config):
     logger.info(chat_id)
-    return int(config.get("chat_id")) == chat_id
+    check = int(config.get("chat_id")) == chat_id
+    logger.info(f"Correct chat: {check}")
+    return check
 
