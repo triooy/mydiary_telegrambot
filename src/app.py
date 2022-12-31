@@ -29,6 +29,7 @@ def main():
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, partial(process_new_text, config=config)))
     dispatcher.add_handler(CommandHandler("daily", partial(commands.daily, config=config)))
     dispatcher.add_handler(CommandHandler("random", partial(commands.get_random_entry, config=config)))
+    dispatcher.add_handler(CommandHandler("stats", partial(commands.get_stats, config=config)))
     dispatcher.add_handler(MessageHandler(Filters.photo, partial(process_new_photo, config=config)))
     updater.start_polling()
     logger.info("Bot started")

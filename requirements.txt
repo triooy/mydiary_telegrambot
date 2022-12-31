@@ -2,3 +2,6 @@ python-telegram-bot
 pandas
 numpy
 pyhocon
+plotly
+nbformat>=4.2.0
+kaleido==0.1.0post1
