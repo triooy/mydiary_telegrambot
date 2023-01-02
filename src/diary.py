@@ -11,13 +11,16 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-def create_diary_entry(text):
+def create_diary_entry(text, insert_time=True):
     """Create a new diary entry for the user with the given text."""
     # create a new diary entry
     # get current date
     date = datetime.now()
     time_ = datetime.now().strftime('-- %H:%M --')
-    text = time_ + "\n" + str(text) + "\n"
+    if insert_time:
+        text = time_ + "\n" + str(text) + "\n"
+    else:
+        text = "\n"+ str(text) + "\n"
     df = pd.DataFrame({'date': [date], 'entry': [text], 'images': [[]]})
     logger.info(f"New diary entry created: {df}")
     return df
@@ -43,8 +46,8 @@ def process_new_text(update: Update, context: CallbackContext, config):
     # process the new text from the user
     # create a new diary entry
     chat_id = update.message.chat_id
-    if correct_chat(chat_id, config):    
-        text = str(update.message.text)
+    text = str(update.message.text)
+    if correct_chat(chat_id, config) and len(text) > 0 :    
         logger.info(f"New text received: {text}")
         df = create_diary_entry(text)
         # get the diary
@@ -57,8 +60,13 @@ def process_new_text(update: Update, context: CallbackContext, config):
             # if there is already an entry for today, append the new text to the existing entry
             # strftime() is used to convert the datetime object to a string
             logger.info(f"Entry for today already exists: {diary_today}")
-            diary_today['entry'] = diary_today['entry'].values[0] + f"\n\n{today}\n" + df['entry'].values[0]
+            # check if last entry is older than 5 minutes
+            last_date = diary_today['date'].values[-1]
+            if (datetime.now() - last_date).total_seconds() < 300:
+                df = create_diary_entry(text, insert_time=False)
+            diary_today['entry'] = diary_today['entry'].values[0] + f"\n\n" + df['entry'].values[0]
             diary_today['images'] = [diary_today['images'].values[0] + df['images'].values[0]]
+            diary_today['date'] = df['date'].values[0]
             df = diary_today
         
         # append the new entry to the diary

@@ -31,7 +31,7 @@ def daily_job(context: CallbackContext, config) -> None:
             # if there are multiple entries for today choose one
             entry = diary_today.sample()   
     text = entry['entry'].values[0]
-    pretext = f"Here is what you wrote in {entry['date'].dt.date.values[0]}:\n\n"
+    pretext = f"There are {len(diary_today)} entries for today. \nHere is what you wrote in {entry['date'].dt.date.values[0]}:\n\n"
     text = pretext + text
     images = entry['images'].values[0]
     context.bot.send_message(job.context, text=text)
@@ -101,10 +101,21 @@ def get_stats(update: Update, context: CallbackContext, config):
         fig = px.bar(distrubution_over_weekdays, x='weekday', y='entries', title="Number of entries per weekday", color='entries', color_continuous_scale=px.colors.sequential.Sunsetdark,
              width=800, height=400, text="entries",)
         fig.write_image("/tmp/entries_per_weekday.png",format='png',engine='kaleido')
+        
+        # distribution over months
+        distrubution_over_months = diary['date'].dt.month_name().value_counts()
+        # sort the months
+        distrubution_over_months = distrubution_over_months.reindex(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'])
+        distrubution_over_months = distrubution_over_months.to_frame().reset_index().rename(columns={'index': 'month', 'date': 'entries'})
+        fig = px.bar(distrubution_over_months, x='month', y='entries', title="Number of entries per month", color='entries', color_continuous_scale=px.colors.sequential.Sunsetdark,
+             width=800, height=400, text="entries",)
+        fig.write_image("/tmp/entries_per_month.png",format='png',engine='kaleido')
+        
         stats = f"Stats:\n\nNumber of entries: {entries}\nNumber of words: {word_count}\nMean words per entry: {mean_words}"
         
         context.bot.send_message(chat_id=chat_id, text=stats)
         context.bot.send_photo(chat_id=chat_id, photo=open('/tmp/entries_per_weekday.png', 'rb'))
+        context.bot.send_photo(chat_id=chat_id, photo=open('/tmp/entries_per_month.png', 'rb'))
         
         delete_message(context, update.message.chat_id, update.message.message_id)
         
