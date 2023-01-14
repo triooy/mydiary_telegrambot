@@ -64,11 +64,7 @@ def process_new_text(update: Update, context: CallbackContext, config):
             logger.info(f"Entry for today already exists: {diary_today}")
             # check if last entry is older than 5 minutes
             last_date = diary_today['date'].values[-1]
-            logger.info("--------------------")
-            logger.info(last_date)
-            logger.info(type(last_date))
-            logger.info("--------------------")
-            if (np.datetime64(last_date).astype(datetime) > datetime.now() - timedelta(seconds=300)):
+            if (pd.to_datetime(last_date) > (datetime.now() - timedelta(seconds=300))):
                 logger.info("Last entry is less than 5 minutes old")
                 df = create_diary_entry(text, insert_time=False)
             diary_today['entry'] = diary_today['entry'].values[0] + f"\n\n" + df['entry'].values[0]
