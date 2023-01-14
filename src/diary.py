@@ -63,6 +63,8 @@ def process_new_text(update: Update, context: CallbackContext, config):
             logger.info(f"Entry for today already exists: {diary_today}")
             # check if last entry is older than 5 minutes
             last_date = diary_today['date'].values[-1]
+            print(last_date)
+            print(type(last_date))
             if (last_date > datetime.now() - timedelta(seconds=300)):
                 logger.info("Last entry is less than 5 minutes old")
                 df = create_diary_entry(text, insert_time=False)
