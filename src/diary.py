@@ -5,6 +5,7 @@ from telegram import Update
 import logging
 import ast
 from pathlib import Path
+import numpy as np
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -67,7 +68,7 @@ def process_new_text(update: Update, context: CallbackContext, config):
             logger.info(last_date)
             logger.info(type(last_date))
             logger.info("--------------------")
-            if (last_date > datetime.now() - timedelta(seconds=300)):
+            if (np.datetime64(last_date).astype(datetime) > datetime.now() - timedelta(seconds=300)):
                 logger.info("Last entry is less than 5 minutes old")
                 df = create_diary_entry(text, insert_time=False)
             diary_today['entry'] = diary_today['entry'].values[0] + f"\n\n" + df['entry'].values[0]
