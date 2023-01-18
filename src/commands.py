@@ -54,7 +54,10 @@ def get_data(update: Update, context: CallbackContext, config) -> None:
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
         # zip data send
-        zip = shutil.make_archive(config.get("data_dir"), "zip", config.get("data_dir"))
+        current_date = datetime.now().date()
+        zip = shutil.make_archive(
+            config.get("data_dir") + f"_{current_date}", "zip", config.get("data_dir")
+        )
         context.bot.send_document(chat_id=chat_id, document=open(zip, "rb"))
         delete_message(context, update.message.chat_id, update.message.message_id)
 
