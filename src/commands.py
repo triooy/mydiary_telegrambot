@@ -1,11 +1,13 @@
 import logging
 import random
+import shutil
 from datetime import datetime, time, timezone
 from functools import partial
 from pathlib import Path
 
 import plotly.express as px
 import pytz
+import telegram
 from diary import correct_chat, get_diary, get_entry_by_date
 from telegram import Update
 from telegram.ext import CallbackContext
@@ -17,7 +19,25 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def daily(update: Update, context: CallbackContext, config):
+def help(update: Update, context: CallbackContext, config) -> None:
+    chat_id = update.message.chat_id
+    if correct_chat(chat_id, config):
+        # sends a markup message with the commands
+        text = """Hi! I'm your personal diary bot. I can help you keep a diary and remind you to write in it. 
+        \n\nHere are the commands I understand:
+        \n`/daily` - I will send you every day a diary entry created on this day in the past at 8:30.
+        \n`/random` - I will send you a random entry from your diary
+        \n`/get_data` - I will send you your diary as a csv file and your images zipped
+        \n`/stats` - I will send you a plot of your entries per day
+        \n`/help` - I will send you this message
+        """
+        context.bot.send_message(
+            chat_id=chat_id, text=text, parse_mode=telegram.ParseMode.MARKDOWN
+        )
+        delete_message(context, update.message.chat_id, update.message.message_id)
+
+
+def daily(update: Update, context: CallbackContext, config) -> None:
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
         context.job_queue.run_daily(
@@ -27,6 +47,15 @@ def daily(update: Update, context: CallbackContext, config):
             name=str(chat_id),
         )
         context.bot.send_message(chat_id=chat_id, text="Daily memory set!")
+        delete_message(context, update.message.chat_id, update.message.message_id)
+
+
+def get_data(update: Update, context: CallbackContext, config) -> None:
+    chat_id = update.message.chat_id
+    if correct_chat(chat_id, config):
+        # zip data send
+        zip = shutil.make_archive(config.get("data_dir"), "zip", config.get("data_dir"))
+        context.bot.send_document(chat_id=chat_id, document=open(zip, "rb"))
         delete_message(context, update.message.chat_id, update.message.message_id)
 
 
