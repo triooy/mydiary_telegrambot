@@ -118,8 +118,10 @@ async def process_new_photo(update: Update, context: CallbackContext, config):
             df = create_diary_entry("")
             df["images"] = [[file_id + ".jpeg"]]
         # save image to disk
-        image = context.bot.get_file(file_id)
-        image.download(Path(config.get("image_dir")) / Path(file_id + ".jpeg"))
+        image = await context.bot.get_file(file_id)
+        await image.download_to_drive(
+            Path(config.get("image_dir")) / Path(file_id + ".jpeg")
+        )
         # append the new entry to the diary
         diary = pd.concat([diary, df])
         # save the diary
