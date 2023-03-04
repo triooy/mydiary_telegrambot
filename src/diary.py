@@ -94,7 +94,7 @@ async def process_new_text(update: Update, context: CallbackContext, config):
         )
 
 
-def process_new_photo(update: Update, context: CallbackContext, config):
+async def process_new_photo(update: Update, context: CallbackContext, config):
 
     if correct_chat(update.message.chat_id, config=config):
         # process the new photo from the user
@@ -124,7 +124,7 @@ def process_new_photo(update: Update, context: CallbackContext, config):
         diary = pd.concat([diary, df])
         # save the diary
         diary.to_csv(config.get("diary_csv"), index=False)
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=update.message.chat_id, text="Your photo has been saved."
         )
 
