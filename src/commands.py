@@ -5,11 +5,12 @@ from datetime import datetime, time, timezone
 from functools import partial
 from pathlib import Path
 
-import plotly.express as px
 import pytz
 import telegram
-from diary import correct_chat, get_diary, get_entry_by_date
+from diary import correct_chat, get_diary, get_entry_by_date, send_day_before_and_after
 from pdf import create_pdf
+from search import search_by_date
+from stats import get_stats
 from telegram import Update
 from telegram.ext import CallbackContext
 
@@ -31,6 +32,7 @@ async def help(update: Update, context: CallbackContext, config) -> None:
         \n`/get_data` - I will send you your diary as a csv file and your images zipped
         \n`/stats` - I will send you a plot of your entries per day
         \n`/pdf -s 19.01.2012 -e 22.12.2022` - I will send you a pdf of your diary
+        \n`/search 2.2.2020` - I will send you the entry for the given date
         \n`/help` - I will send you this message
         """
         await context.bot.send_message(
@@ -83,6 +85,7 @@ async def daily_job(context: CallbackContext, config) -> None:
             image = random.choice(images)
             with open(Path(config.get("image_dir")) / Path(image), "rb") as f:
                 await context.bot.send_photo(context.job.chat_id, photo=f)
+        await send_day_before_and_after(entry, context, config)
     else:
         logger.info("No entry for today")
         await context.bot.send_message(
@@ -127,6 +130,7 @@ async def get_random_entry(update: Update, context: CallbackContext, config):
                 with open(Path(config.get("image_dir")) / Path(image), "rb") as f:
                     await context.bot.send_photo(chat_id=chat_id, photo=f)
         await delete_message(context, update.message.chat_id, update.message.message_id)
+        await send_day_before_and_after(random_entry, update, config)
 
 
 async def get_stats(update: Update, context: CallbackContext, config):
@@ -140,89 +144,14 @@ async def get_stats(update: Update, context: CallbackContext, config):
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
         diary = get_diary(config)
-        word_count = diary["entry"].str.split().str.len().sum()
-        entries = len(diary)
-        mean_words = round(word_count / entries, 2)
-
-        ## generate a historgram of the number of entries per day
-        ## plot it with seaborn
-        distrubution_over_weekdays = diary["date"].dt.day_name().value_counts()
-        # sort the days of the week
-        distrubution_over_weekdays = distrubution_over_weekdays.reindex(
-            [
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thursday",
-                "Friday",
-                "Saturday",
-                "Sunday",
-            ]
-        )
-        distrubution_over_weekdays = (
-            distrubution_over_weekdays.to_frame()
-            .reset_index()
-            .rename(columns={"index": "weekday", "date": "entries"})
-        )
-
-        fig = px.bar(
-            distrubution_over_weekdays,
-            x="weekday",
-            y="entries",
-            title="Number of entries per weekday",
-            color="entries",
-            color_continuous_scale=px.colors.sequential.Sunsetdark,
-            width=800,
-            height=400,
-            text="entries",
-        )
-        fig.write_image("/tmp/entries_per_weekday.png", format="png", engine="kaleido")
-
-        # distribution over months
-        distrubution_over_months = diary["date"].dt.month_name().value_counts()
-        # sort the months
-        distrubution_over_months = distrubution_over_months.reindex(
-            [
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-            ]
-        )
-        distrubution_over_months = (
-            distrubution_over_months.to_frame()
-            .reset_index()
-            .rename(columns={"index": "month", "date": "entries"})
-        )
-        fig = px.bar(
-            distrubution_over_months,
-            x="month",
-            y="entries",
-            title="Number of entries per month",
-            color="entries",
-            color_continuous_scale=px.colors.sequential.Sunsetdark,
-            width=800,
-            height=400,
-            text="entries",
-        )
-        fig.write_image("/tmp/entries_per_month.png", format="png", engine="kaleido")
-
-        stats = f"Stats:\n\nNumber of entries: {entries}\nNumber of words: {word_count}\nMean words per entry: {mean_words}"
+        stats, entries_per_weekday, entries_per_month = get_stats(diary)
 
         await context.bot.send_message(chat_id=chat_id, text=stats)
         await context.bot.send_photo(
-            chat_id=chat_id, photo=open("/tmp/entries_per_weekday.png", "rb")
+            chat_id=chat_id, photo=open(entries_per_weekday, "rb")
         )
         await context.bot.send_photo(
-            chat_id=chat_id, photo=open("/tmp/entries_per_month.png", "rb")
+            chat_id=chat_id, photo=open(entries_per_month, "rb")
         )
 
         await delete_message(context, update.message.chat_id, update.message.message_id)
@@ -239,7 +168,7 @@ async def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
 
 
 async def pdf(update: Update, context: CallbackContext, config):
-
+    """Creates a pdf from the diary and sends it to the user."""
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
         diary = get_diary(config)
@@ -254,3 +183,13 @@ async def pdf(update: Update, context: CallbackContext, config):
         pdf_path = create_pdf(diary, config["author"], start_date, end_date)
         await context.bot.send_document(chat_id=chat_id, document=open(pdf_path, "rb"))
         await delete_message(context, update.message.chat_id, update.message.message_id)
+
+
+async def search(update: Update, context: CallbackContext, config):
+    """Searches for entries for a given date."""
+    chat_id = update.message.chat_id
+    if correct_chat(chat_id, config):
+        date = update.message.text
+        date = date.replace("_", ".").replace("/", "")
+        diary = get_diary(config)
+        await search_by_date(date, diary, update, config)

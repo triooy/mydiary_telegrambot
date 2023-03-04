@@ -40,15 +40,39 @@ def get_diary(config):
     return df
 
 
-def get_entry_by_date(date, config):
+async def send_day_before_and_after(entry, update: Update, config):
+    # send dates day before and after
+    daybefore = entry["date"].dt.date.values[0] - pd.Timedelta(days=1)
+    daybefore = daybefore.strftime("%d_%m_%Y")
+    dayafter = entry["date"].dt.date.values[0] + pd.Timedelta(days=1)
+    dayafter = dayafter.strftime("%d_%m_%Y")
+    msg = (
+        f"Here are the closest entries:\n"
+        f"Before: /{daybefore}\n"
+        f"After: /{dayafter}"
+    )
+    await update.message.reply_text(msg)
+
+
+def get_entry_by_date(date, config, year=False):
     """Get the diary entry for the given date."""
     # get the diary entry for the given month and day
+    if isinstance(date, str):
+        date = datetime.strptime(date, "%d.%m.%Y").date()
+
     diary = get_diary(config=config)
-    diary_date = diary[
-        (diary["date"].dt.day == date.day)
-        & (diary["date"].dt.month == date.month)
-        & (diary["date"].dt.year != date.year)
-    ]
+    if year:
+        diary_date = diary[
+            (diary["date"].dt.day == date.day)
+            & (diary["date"].dt.month == date.month)
+            & (diary["date"].dt.year == date.year)
+        ]
+    else:
+        diary_date = diary[
+            (diary["date"].dt.day == date.day)
+            & (diary["date"].dt.month == date.month)
+            & (diary["date"].dt.year != date.year)
+        ]
     return diary_date
 
 

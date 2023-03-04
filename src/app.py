@@ -6,7 +6,7 @@ from pathlib import Path
 import commands
 from diary import *
 from pyhocon import ConfigFactory
-from telegram.ext import Application, CommandHandler, MessageHandler, Updater, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -44,6 +44,14 @@ def main():
         CommandHandler("help", partial(commands.help, config=config))
     )
     dispatcher.add_handler(CommandHandler("pdf", partial(commands.pdf, config=config)))
+    # Filter dates in the format dd.mm.yyyy or d.m.yyyy or d.m.yy or dd.mm.yy or d.mm.yy or dd.m.yy or d.mm.yyyy or dd.m.yyyy and so on
+    dispatcher.add_handler(
+        MessageHandler(
+            filters.Regex(r"/(\d{1,2}_\d{1,2}_\d{2,4})"),
+            partial(commands.search, config=config),
+        )
+    )
+
     dispatcher.add_handler(
         MessageHandler(filters.PHOTO, partial(process_new_photo, config=config))
     )
