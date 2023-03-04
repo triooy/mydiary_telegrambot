@@ -44,7 +44,7 @@ async def daily(update: Update, context: CallbackContext, config) -> None:
     if correct_chat(chat_id, config):
         context.job_queue.run_daily(
             partial(daily_job, config=config),
-            time(hour=16, minute=26, tzinfo=pytz.timezone("Europe/Amsterdam")),
+            time(hour=8, minute=30, tzinfo=pytz.timezone("Europe/Amsterdam")),
             chat_id=chat_id,
             name=str(chat_id),
         )
