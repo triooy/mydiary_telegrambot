@@ -44,7 +44,7 @@ async def daily(update: Update, context: CallbackContext, config) -> None:
     if correct_chat(chat_id, config):
         context.job_queue.run_daily(
             partial(daily_job, config=config),
-            time(hour=8, minute=30, tzinfo=pytz.timezone("Europe/Amsterdam")),
+            time(hour=16, minute=26, tzinfo=pytz.timezone("Europe/Amsterdam")),
             chat_id=chat_id,
             name=str(chat_id),
         )
@@ -65,7 +65,6 @@ async def get_data(update: Update, context: CallbackContext, config) -> None:
 
 
 async def daily_job(context: CallbackContext, config) -> None:
-    job = context.job
     today = datetime.now().date()
     diary_today = get_entry_by_date(today, config)
     if len(diary_today) > 0:
@@ -74,16 +73,21 @@ async def daily_job(context: CallbackContext, config) -> None:
         else:
             # if there are multiple entries for today choose one
             entry = diary_today.sample()
-    text = entry["entry"].values[0]
-    pretext = f"There are {len(diary_today)} entries for today. \nHere is what you wrote in {entry['date'].dt.date.values[0]}:\n\n"
-    text = pretext + text
-    images = entry["images"].values[0]
-    await context.bot.send_message(job.context, text=text)
-    if len(images) > 0:
-        # choose one image
-        image = random.choice(images)
-        with open(Path(config.get("image_dir")) / Path(image), "rb") as f:
-            await context.bot.send_photo(job.context, photo=f)
+        text = entry["entry"].values[0]
+        pretext = f"There are {len(diary_today)} entries for today. \nHere is what you wrote in {entry['date'].dt.date.values[0]}:\n\n"
+        text = pretext + text
+        images = entry["images"].values[0]
+        await context.bot.send_message(context.job.chat_id, text=text)
+        if len(images) > 0:
+            # choose one image
+            image = random.choice(images)
+            with open(Path(config.get("image_dir")) / Path(image), "rb") as f:
+                await context.bot.send_photo(context.job.chat_id, photo=f)
+    else:
+        logger.info("No entry for today")
+        await context.bot.send_message(
+            context.job.chat_id, text="No entry for today, you should write one!"
+        )
 
 
 async def delete_message(context: CallbackContext, chat_id, message_id):
