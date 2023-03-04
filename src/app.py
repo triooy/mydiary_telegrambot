@@ -6,7 +6,7 @@ from pathlib import Path
 import commands
 from diary import *
 from pyhocon import ConfigFactory
-from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
+from telegram.ext import Application, CommandHandler, MessageHandler, Updater, filters
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -20,11 +20,12 @@ api_key = config.get("api_key")
 
 def main():
     """Start the bot."""
-    updater = Updater(api_key, use_context=True)
-    dispatcher = updater.dispatcher
+    dispatcher = Application.builder().token(api_key).build()
+    # updater = Updater(api_key, use_context=True)
+    # dispatcher = updater.dispatcher
     dispatcher.add_handler(
         MessageHandler(
-            Filters.text & ~Filters.command, partial(process_new_text, config=config)
+            filters.TEXT & ~filters.COMMAND, partial(process_new_text, config=config)
         )
     )
     dispatcher.add_handler(
@@ -44,11 +45,12 @@ def main():
     )
     dispatcher.add_handler(CommandHandler("pdf", partial(commands.pdf, config=config)))
     dispatcher.add_handler(
-        MessageHandler(Filters.photo, partial(process_new_photo, config=config))
+        MessageHandler(filters.PHOTO, partial(process_new_photo, config=config))
     )
-    updater.start_polling()
     logger.info("Bot started")
-    updater.idle()
+    dispatcher.run_polling(
+        read_timeout=15, timeout=20, connect_timeout=15, write_timeout=15
+    )
 
 
 if __name__ == "__main__":

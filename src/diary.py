@@ -52,7 +52,7 @@ def get_entry_by_date(date, config):
     return diary_date
 
 
-def process_new_text(update: Update, context: CallbackContext, config):
+async def process_new_text(update: Update, context: CallbackContext, config):
     """Process the new text from the user."""
     # process the new text from the user
     # create a new diary entry
@@ -89,8 +89,9 @@ def process_new_text(update: Update, context: CallbackContext, config):
         diary = pd.concat([diary, df])
         # save the diary
         diary.to_csv(config.get("diary_csv"), index=False)
-        context.bot.send_message(chat_id=chat_id, text="Your entry has been saved.")
-        return diary
+        await context.bot.send_message(
+            chat_id=chat_id, text="Your entry has been saved."
+        )
 
 
 def process_new_photo(update: Update, context: CallbackContext, config):
