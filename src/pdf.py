@@ -158,7 +158,7 @@ def create_pdf(data, author, start_date=None, end_date=None):
     pdf.cell(5, 450, f"Herausgegeben: {date}", align="L", new_x="LMARGIN", new_y="NEXT")
 
     number_of_entries = len(data)
-    table_of_contents_pages = int(number_of_entries / 40) + 1
+    table_of_contents_pages = int(number_of_entries / 60) + 1
 
     pdf.insert_toc_placeholder(render_toc, table_of_contents_pages)
 
