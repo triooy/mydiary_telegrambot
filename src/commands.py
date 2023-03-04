@@ -9,6 +9,7 @@ import plotly.express as px
 import pytz
 import telegram
 from diary import correct_chat, get_diary, get_entry_by_date
+from pdf import create_pdf
 from telegram import Update
 from telegram.ext import CallbackContext
 
@@ -29,6 +30,7 @@ def help(update: Update, context: CallbackContext, config) -> None:
         \n`/random` - I will send you a random entry from your diary
         \n`/get_data` - I will send you your diary as a csv file and your images zipped
         \n`/stats` - I will send you a plot of your entries per day
+        \v`/pdf -s 19.01.2012 -e 22.12.2022` - I will send you a pdf of your diary
         \n`/help` - I will send you this message
         """
         context.bot.send_message(
@@ -230,3 +232,21 @@ def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
     for job in current_jobs:
         job.schedule_removal()
     return True
+
+
+def pdf(update: Update, context: CallbackContext, config):
+
+    chat_id = update.message.chat_id
+    if correct_chat(chat_id, config):
+        diary = get_diary(config)
+        # read parameters from message -s for start_date and -e for end_date
+        args = context.args
+        start_date = None
+        end_date = None
+        if "-s" in args:
+            start_date = args[args.index("-s") + 1]
+        if "-e" in args:
+            end_date = args[args.index("-e") + 1]
+        pdf_path = create_pdf(diary, config["author"], start_date, end_date)
+        context.bot.send_document(chat_id=chat_id, document=open(pdf_path, "rb"))
+        delete_message(context, update.message.chat_id, update.message.message_id)

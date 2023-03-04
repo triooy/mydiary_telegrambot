@@ -156,7 +156,11 @@ def create_pdf(data, author, start_date=None, end_date=None):
     )
     pdf.set_font("Rokkitt", "B", 20)
     pdf.cell(5, 450, f"Herausgegeben: {date}", align="L", new_x="LMARGIN", new_y="NEXT")
-    pdf.insert_toc_placeholder(render_toc, 2)
+
+    number_of_entries = len(data)
+    table_of_contents_pages = int(number_of_entries / 50) + 1
+
+    pdf.insert_toc_placeholder(render_toc, table_of_contents_pages)
 
     pdf.set_col(0)
     pdf.add_page()
@@ -195,6 +199,6 @@ def create_pdf(data, author, start_date=None, end_date=None):
     end_date = datetime.strptime(last_date, "%d.%m.%Y").strftime("%Y_%m_%d")
     dates = f"{first_date}-{end_date}"
     file = f'{dates}-{author.replace(" ", "_")}.pdf'.lower()
-    filepath = "/tmp/" + file
+    filepath = file
     pdf.output(filepath, "F")
     return filepath

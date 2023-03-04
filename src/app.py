@@ -42,6 +42,7 @@ def main():
     dispatcher.add_handler(
         CommandHandler("help", partial(commands.help, config=config))
     )
+    dispatcher.add_handler(CommandHandler("pdf", partial(commands.pdf, config=config)))
     dispatcher.add_handler(
         MessageHandler(Filters.photo, partial(process_new_photo, config=config))
     )
