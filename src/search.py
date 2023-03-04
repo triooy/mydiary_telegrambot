@@ -13,7 +13,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def search_by_date(date, diary: pd.DataFrame, update: Update, config):
+async def search_by_date(date, diary: pd.DataFrame, update: Update, context, config):
     try:
         entry = get_entry_by_date(date, config, year=True)
     except ValueError:
@@ -31,7 +31,7 @@ async def search_by_date(date, diary: pd.DataFrame, update: Update, config):
             for image in images:
                 with open(Path(config.get("image_dir")) / Path(image), "rb") as f:
                     await update.message.reply_photo(photo=f)
-        await send_day_before_and_after(entry, update, config)
+        await send_day_before_and_after(entry, context, config)
     else:
 
         # searchin for the closest date in the past and in the future

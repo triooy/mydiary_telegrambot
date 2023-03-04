@@ -40,7 +40,7 @@ def get_diary(config):
     return df
 
 
-async def send_day_before_and_after(entry, update: Update, config):
+async def send_day_before_and_after(entry, context, config):
     # send dates day before and after
     daybefore = entry["date"].dt.date.values[0] - pd.Timedelta(days=1)
     daybefore = daybefore.strftime("%d_%m_%Y")
@@ -51,7 +51,7 @@ async def send_day_before_and_after(entry, update: Update, config):
         f"Before: /{daybefore}\n"
         f"After: /{dayafter}"
     )
-    await update.message.reply_text(msg)
+    await context.bot.send_message(chat_id=config.get("chat_id"), text=msg)
 
 
 def get_entry_by_date(date, config, year=False):

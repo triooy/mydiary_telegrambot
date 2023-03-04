@@ -130,7 +130,7 @@ async def get_random_entry(update: Update, context: CallbackContext, config):
                 with open(Path(config.get("image_dir")) / Path(image), "rb") as f:
                     await context.bot.send_photo(chat_id=chat_id, photo=f)
         await delete_message(context, update.message.chat_id, update.message.message_id)
-        await send_day_before_and_after(random_entry, update, config)
+        await send_day_before_and_after(random_entry, context, config)
 
 
 async def get_stats(update: Update, context: CallbackContext, config):
@@ -192,4 +192,4 @@ async def search(update: Update, context: CallbackContext, config):
         date = update.message.text
         date = date.replace("_", ".").replace("/", "")
         diary = get_diary(config)
-        await search_by_date(date, diary, update, config)
+        await search_by_date(date, diary, update, context, config)
