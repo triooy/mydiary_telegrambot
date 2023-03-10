@@ -82,7 +82,7 @@ async def daily_job(context: CallbackContext, config) -> None:
         pretext = f"There are {len(diary_today)} entries for today. \nHere is what you wrote in {entry['date'].dt.date.values[0]}:\n\n"
         text = pretext + text
         images = entry["images"].values[0]
-        await context.bot.send_message(context.job.chat_id, text=text)
+        await send_message(text, context.job.chat_id, context, config)
         if len(images) > 0:
             # choose one image
             image = random.choice(images)
@@ -126,7 +126,7 @@ async def get_random_entry(update: Update, context: CallbackContext, config):
             f"Here is a random entry from {random_entry['date'].dt.date.values[0]}:\n\n"
         )
         text = intro + str(random_entry["entry"].values[0])
-        await context.bot.send_message(chat_id=chat_id, text=text)
+        await send_message(text, context.job.chat_id, context, config)
         images = random_entry["images"].values[0]
         if len(images) > 0:
             for image in images:
@@ -208,13 +208,27 @@ async def search(update: Update, context: CallbackContext, config):
                 )
                 for i, similar_entry in similar_entries.iterrows():
                     text = f"Here is a similar entry from {similar_entry['date'].date().strftime('%d.%m.%Y')}:\n\n"
-                    await context.bot.send_message(
-                        chat_id=chat_id, text=text + similar_entry["entry"]
+                    await send_message(
+                        text + similar_entry["entry"],
+                        context.job.chat_id,
+                        context,
+                        config,
                     )
+
         else:
             entry = await search_by_date(
                 date, diary, update, context, config, send=True
             )
+
+
+async def send_message(text, chat_id, context: CallbackContext, config):
+    """Sends a message to the user."""
+    if correct_chat(chat_id, config):
+        if len(text) > 5000:
+            for i in range(0, len(text), 5000):
+                await context.bot.send_message(chat_id=chat_id, text=text[i : i + 5000])
+        else:
+            await context.bot.send_message(chat_id=chat_id, text=text)
 
 
 async def search_words(update: Update, context: CallbackContext, config):
@@ -235,7 +249,8 @@ async def search_words(update: Update, context: CallbackContext, config):
         for entry in similar_entries.iterrows():
             text = f"Here is a similar entry from {entry[1]['date'].date().strftime('%d.%m.%Y')} with similarity {round(entry[1]['similarity'])}:\n\n"
             text = text + str(entry[1]["entry"])
-            await context.bot.send_message(chat_id=chat_id, text=text)
+
+            await send_message(text, update, context.job.chat_id, config)
             images = entry[1]["images"]
             if len(images) > 0:
                 for image in images:
