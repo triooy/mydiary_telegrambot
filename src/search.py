@@ -17,6 +17,9 @@ logger = logging.getLogger(__name__)
 async def send_day_before_and_after(entry, context, config):
     # send dates day before and after
     diary = get_diary(config)
+    # entry is a Series object convert to pandas DataFrame
+    if isinstance(entry, pd.Series):
+        entry = pd.DataFrame(entry).T
     entry_date = pd.to_datetime(entry["date"].values[0]).strftime("%d_%m_%Ys_1")
     daybefore, dayafter = get_closest_entries(entry["date"].values[0], diary)
     msg = (
