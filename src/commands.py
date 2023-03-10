@@ -258,7 +258,7 @@ async def search_words(update: Update, context: CallbackContext, config):
             text = f"Here is a similar entry from {entry[1]['date'].date().strftime('%d.%m.%Y')} with similarity {round(entry[1]['similarity'])}:\n\n"
             text = text + str(entry[1]["entry"])
 
-            await send_message(text, update, config)
+            await send_message(text, context, config)
             images = entry[1]["images"]
             if len(images) > 0:
                 for image in images:
