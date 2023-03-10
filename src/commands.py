@@ -220,15 +220,19 @@ async def search(update: Update, context: CallbackContext, config):
             )
 
 
-async def send_message(text, context: CallbackContext, config, job=False):
+async def send_message(
+    text, context: CallbackContext, config, job=False, max_length=2500
+):
     """Sends a message to the user."""
     chat_id = context._chat_id
     if job:
         chat_id = context.job.chat_id
     if correct_chat(chat_id, config):
-        if len(text) > 5000:
-            for i in range(0, len(text), 5000):
-                await context.bot.send_message(chat_id=chat_id, text=text[i : i + 5000])
+        if len(text) > max_length:
+            for i in range(0, len(text), max_length):
+                await context.bot.send_message(
+                    chat_id=chat_id, text=text[i : i + max_length]
+                )
         else:
             await context.bot.send_message(chat_id=chat_id, text=text)
 
