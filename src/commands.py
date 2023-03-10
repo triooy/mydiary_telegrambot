@@ -219,7 +219,6 @@ async def search(update: Update, context: CallbackContext, config):
             entry = await search_by_date(
                 date, diary, update, context, config, send=True
             )
-            await send_day_before_and_after(entry, context, config)
 
 
 async def send_message(
