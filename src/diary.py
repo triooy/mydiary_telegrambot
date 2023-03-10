@@ -1,9 +1,12 @@
 import ast
 import logging
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+from openai_tools import add_embedding, get_embedding
 from telegram import Update
 from telegram.ext import CallbackContext
 
@@ -36,7 +39,22 @@ def get_diary(config):
     df["images"] = df["images"].apply(ast.literal_eval)
     df["date"] = pd.to_datetime(df["date"])
     df["entry"] = df["entry"].astype(str)
+    # check if embedding file exists
+    if Path(config.get("embedding_file")).exists():
+        embeddings = np.load(config.get("embedding_file"), allow_pickle=True)
+        embeddings = np.array(embeddings.tolist())
+        df["embedding"] = embeddings.tolist()
+
     return df
+
+
+def save_diary(df, config):
+    # save embedding to numpy
+    embedding = np.array(df["embedding"].values)
+    np.save(config.get("embedding_file"), embedding)
+    # remove embedding column
+    df = df.drop(columns=["embedding"])
+    df.to_csv(config.get("diary_csv"), index=False)
 
 
 async def process_new_text(update: Update, context: CallbackContext, config):
@@ -71,11 +89,11 @@ async def process_new_text(update: Update, context: CallbackContext, config):
             ]
             diary_today["date"] = df["date"].values[0]
             df = diary_today
-
+        df = add_embedding(df)
         # append the new entry to the diary
         diary = pd.concat([diary, df])
         # save the diary
-        diary.to_csv(config.get("diary_csv"), index=False)
+        save_diary(diary, config)
         await context.bot.send_message(
             chat_id=chat_id, text="Your entry has been saved."
         )
@@ -109,10 +127,11 @@ async def process_new_photo(update: Update, context: CallbackContext, config):
         await image.download_to_drive(
             Path(config.get("image_dir")) / Path(file_id + ".jpeg")
         )
+        df = add_embedding(df)
         # append the new entry to the diary
         diary = pd.concat([diary, df])
         # save the diary
-        diary.to_csv(config.get("diary_csv"), index=False)
+        save_diary(diary, config)
         await context.bot.send_message(
             chat_id=update.message.chat_id, text="Your photo has been saved."
         )

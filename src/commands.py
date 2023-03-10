@@ -8,6 +8,7 @@ from pathlib import Path
 import pytz
 import telegram
 from diary import correct_chat, get_diary
+from openai_tools import search_entries
 from pdf import create_pdf
 from search import get_entry_by_date, search_by_date, send_day_before_and_after
 from stats import get_stats
@@ -32,7 +33,8 @@ async def help(update: Update, context: CallbackContext, config) -> None:
         \n`/get_data` - I will send you your diary as a csv file and your images zipped
         \n`/stats` - I will send you a plot of your entries per day
         \n`/pdf -s 19.01.2012 -e 22.12.2022` - I will send you a pdf of your diary
-        \n`/search 2.2.2020` - I will send you the entry for the given date
+        \n`/2_2_2020` - I will send you the entry for the given date
+        \n`/search I am happy -n 2` - I will send you the the most similar entries containing the given query
         \n`/help` - I will send you this message
         """
         await context.bot.send_message(
@@ -193,3 +195,31 @@ async def search(update: Update, context: CallbackContext, config):
         date = date.replace("_", ".").replace("/", "")
         diary = get_diary(config)
         await search_by_date(date, diary, update, context, config)
+
+
+async def search_words(update: Update, context: CallbackContext, config):
+    """Creates a pdf from the diary and sends it to the user."""
+    chat_id = update.message.chat_id
+    if correct_chat(chat_id, config):
+        diary = get_diary(config)
+        # read parameters from message -s for start_date and -e for end_date
+        args = context.args
+        if "-n" in args:
+            n = int(args[args.index("-n") + 1])
+            search_query = " ".join(args[: args.index("-n")])
+        else:
+            n = 1
+            search_query = " ".join(args)
+        similar_entries = search_entries(diary, search_query, n)
+
+        for entry in similar_entries.iterrows():
+            text = f"Here is a similar entry from {entry[1]['date'].date().strftime('%d.%m.%Y')} with similarity {round(entry[1]['similarity'])}:\n\n"
+            text = text + str(entry[1]["entry"])
+            await context.bot.send_message(chat_id=chat_id, text=text)
+            images = entry[1]["images"]
+            if len(images) > 0:
+                for image in images:
+                    with open(Path(config.get("image_dir")) / Path(image), "rb") as f:
+                        await context.bot.send_photo(chat_id=chat_id, photo=f)
+
+        await delete_message(context, update.message.chat_id, update.message.message_id)

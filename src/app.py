@@ -4,6 +4,7 @@ from functools import partial
 from pathlib import Path
 
 import commands
+import openai
 from diary import *
 from pyhocon import ConfigFactory
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 config = ConfigFactory.parse_file(Path("config/config.conf"))
 api_key = config.get("api_key")
+openai.api_key = config.get("openai_key")
 
 
 def main():
@@ -44,6 +46,10 @@ def main():
         CommandHandler("help", partial(commands.help, config=config))
     )
     dispatcher.add_handler(CommandHandler("pdf", partial(commands.pdf, config=config)))
+
+    dispatcher.add_handler(
+        CommandHandler("search", partial(commands.search_words, config=config))
+    )
     # Filter dates in the format dd.mm.yyyy or d.m.yyyy or d.m.yy or dd.mm.yy or d.mm.yy or dd.m.yy or d.mm.yyyy or dd.m.yyyy and so on
     dispatcher.add_handler(
         MessageHandler(
