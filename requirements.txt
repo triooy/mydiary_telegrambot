@@ -10,3 +10,4 @@ lxml
 openai
 matplotlib
 scipy
+scikt-learn
