@@ -51,9 +51,10 @@ def main():
         CommandHandler("search", partial(commands.search_words, config=config))
     )
     # Filter dates in the format dd.mm.yyyy or d.m.yyyy or d.m.yy or dd.mm.yy or d.mm.yy or dd.m.yy or d.mm.yyyy or dd.m.yyyy and so on
+    # optional dd_mm_yyyy#s-1 or dd_mm_yyyy#s-2 or dd_mm_yyyy#s-3 or dd_mm_yyyy#s-4 or dd_mm_yyyys_5
     dispatcher.add_handler(
         MessageHandler(
-            filters.Regex(r"/(\d{1,2}_\d{1,2}_\d{2,4})"),
+            filters.Regex(r"/(\d{1,2}_\d{1,2}_\d{2,4})(s_\d)?"),
             partial(commands.search, config=config),
         )
     )

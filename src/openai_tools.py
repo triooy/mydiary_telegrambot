@@ -23,6 +23,7 @@ def search_entries(df, search, n=3, pprint=False):
 
 
 def get_similar_entries(df, embed, n=3):
+    n = int(n)
     df["similarity"] = df.embedding.apply(lambda x: cosine_similarity(x, embed))
-    results = df.sort_values("similarity", ascending=False).head(n)
+    results = df.sort_values("similarity", ascending=False).head(n + 1).iloc[1:]
     return results

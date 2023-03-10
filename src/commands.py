@@ -8,7 +8,7 @@ from pathlib import Path
 import pytz
 import telegram
 from diary import correct_chat, get_diary
-from openai_tools import search_entries
+from openai_tools import get_similar_entries, search_entries
 from pdf import create_pdf
 from search import get_entry_by_date, search_by_date, send_day_before_and_after
 from stats import get_stats
@@ -34,6 +34,7 @@ async def help(update: Update, context: CallbackContext, config) -> None:
         \n`/stats` - I will send you a plot of your entries per day
         \n`/pdf -s 19.01.2012 -e 22.12.2022` - I will send you a pdf of your diary
         \n`/2_2_2020` - I will send you the entry for the given date
+        \n`/2_2_2020s_2` - I will send you the entry for the given date and two similar entries
         \n`/search I am happy -n 2` - I will send you the the most similar entries containing the given query
         \n`/help` - I will send you this message
         """
@@ -194,7 +195,26 @@ async def search(update: Update, context: CallbackContext, config):
         date = update.message.text
         date = date.replace("_", ".").replace("/", "")
         diary = get_diary(config)
-        await search_by_date(date, diary, update, context, config)
+        similar = None
+        if "s" in date:
+            similar = date.split("s")[1].split(".")[1]
+            date = date.split("s")[0]
+            entry = await search_by_date(
+                date, diary, update, context, config, send=False
+            )
+            if len(entry) > 0 and similar:
+                similar_entries = get_similar_entries(
+                    diary, entry["embedding"].values[0], int(similar)
+                )
+                for i, similar_entry in similar_entries.iterrows():
+                    text = f"Here is a similar entry from {similar_entry['date'].date().strftime('%d.%m.%Y')}:\n\n"
+                    await context.bot.send_message(
+                        chat_id=chat_id, text=text + similar_entry["entry"]
+                    )
+        else:
+            entry = await search_by_date(
+                date, diary, update, context, config, send=True
+            )
 
 
 async def search_words(update: Update, context: CallbackContext, config):
