@@ -213,11 +213,13 @@ async def search(update: Update, context: CallbackContext, config):
                         context,
                         config,
                     )
+                    await send_day_before_and_after(similar_entry, context, config)
 
         else:
             entry = await search_by_date(
                 date, diary, update, context, config, send=True
             )
+            await send_day_before_and_after(entry, context, config)
 
 
 async def send_message(
@@ -262,5 +264,6 @@ async def search_words(update: Update, context: CallbackContext, config):
                 for image in images:
                     with open(Path(config.get("image_dir")) / Path(image), "rb") as f:
                         await context.bot.send_photo(chat_id=chat_id, photo=f)
+            await send_day_before_and_after(entry[1], context, config)
 
         await delete_message(context, update.message.chat_id, update.message.message_id)
