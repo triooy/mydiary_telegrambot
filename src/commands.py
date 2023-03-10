@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytz
 import telegram
-from diary import correct_chat, get_diary, get_entry_by_date, send_day_before_and_after
+from diary import correct_chat, get_diary
 from pdf import create_pdf
-from search import search_by_date
+from search import get_entry_by_date, search_by_date, send_day_before_and_after
 from stats import get_stats
 from telegram import Update
 from telegram.ext import CallbackContext

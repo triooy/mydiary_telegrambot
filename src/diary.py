@@ -3,7 +3,6 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from telegram import Update
 from telegram.ext import CallbackContext
@@ -38,42 +37,6 @@ def get_diary(config):
     df["date"] = pd.to_datetime(df["date"])
     df["entry"] = df["entry"].astype(str)
     return df
-
-
-async def send_day_before_and_after(entry, context, config):
-    # send dates day before and after
-    daybefore = entry["date"].dt.date.values[0] - pd.Timedelta(days=1)
-    daybefore = daybefore.strftime("%d_%m_%Y")
-    dayafter = entry["date"].dt.date.values[0] + pd.Timedelta(days=1)
-    dayafter = dayafter.strftime("%d_%m_%Y")
-    msg = (
-        f"Here are the closest entries:\n"
-        f"Before: /{daybefore}\n"
-        f"After: /{dayafter}"
-    )
-    await context.bot.send_message(chat_id=config.get("chat_id"), text=msg)
-
-
-def get_entry_by_date(date, config, year=False):
-    """Get the diary entry for the given date."""
-    # get the diary entry for the given month and day
-    if isinstance(date, str):
-        date = datetime.strptime(date, "%d.%m.%Y").date()
-
-    diary = get_diary(config=config)
-    if year:
-        diary_date = diary[
-            (diary["date"].dt.day == date.day)
-            & (diary["date"].dt.month == date.month)
-            & (diary["date"].dt.year == date.year)
-        ]
-    else:
-        diary_date = diary[
-            (diary["date"].dt.day == date.day)
-            & (diary["date"].dt.month == date.month)
-            & (diary["date"].dt.year != date.year)
-        ]
-    return diary_date
 
 
 async def process_new_text(update: Update, context: CallbackContext, config):
