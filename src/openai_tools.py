@@ -14,11 +14,15 @@ def add_embedding(df, model="text-embedding-ada-002"):
 
 def search_entries(df, search, n=3, pprint=False):
     embed = get_embedding(search)
-    df["similarity"] = df.embedding.apply(lambda x: cosine_similarity(x, embed))
-
-    results = df.sort_values("similarity", ascending=False).head(n)
+    results = get_similar_entries(df, embed, n=n)
     if pprint:
         for r in results.entry.values:
             print(r)
             print()
+    return results
+
+
+def get_similar_entries(df, embed, n=3):
+    df["similarity"] = df.embedding.apply(lambda x: cosine_similarity(x, embed))
+    results = df.sort_values("similarity", ascending=False).head(n)
     return results

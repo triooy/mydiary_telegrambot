@@ -8,3 +8,4 @@ kaleido==0.1.0
 fpdf2
 lxml
 openai
+matplotlib
