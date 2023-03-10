@@ -254,7 +254,7 @@ async def search_words(update: Update, context: CallbackContext, config):
         similar_entries = search_entries(diary, search_query, n)
 
         for entry in similar_entries.iterrows():
-            text = f"Here is a similar entry from {entry[1]['date'].date().strftime('%d.%m.%Y')} with similarity {round(entry[1]['similarity'])}:\n\n"
+            text = f"Here is a similar entry from {entry[1]['date'].date().strftime('%d.%m.%Y')} with similarity {round(entry[1]['similarity'], 3)}:\n\n"
             text = text + str(entry[1]["entry"])
 
             await send_message(text, context, config)
