@@ -23,4 +23,5 @@ With this repository you can start a telegram bot, which can be used to keep not
   
 ### Commands
 - `/help` - Show all commands
-![](./data/help.jpg)
+
+<img src="./data/help.jpg" width="250">
