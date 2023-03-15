@@ -4,8 +4,9 @@ from pathlib import Path
 
 import pandas as pd
 import telegram
-from diary import get_diary
 from telegram import Update
+
+from diary import get_diary
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO

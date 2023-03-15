@@ -1,7 +1,7 @@
 import logging
 import random
 import shutil
-from datetime import datetime, time, timezone
+from datetime import datetime, time
 from functools import partial
 from pathlib import Path
 
@@ -45,6 +45,7 @@ async def help(update: Update, context: CallbackContext, config) -> None:
 
 
 async def daily(update: Update, context: CallbackContext, config) -> None:
+    """Sets a daily job to send a entry for the current day at 8:30."""
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
         context.job_queue.run_daily(
@@ -58,6 +59,7 @@ async def daily(update: Update, context: CallbackContext, config) -> None:
 
 
 async def get_data(update: Update, context: CallbackContext, config) -> None:
+    """Sends all diary data as zip file."""
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
         # zip data send
@@ -97,13 +99,7 @@ async def daily_job(context: CallbackContext, config) -> None:
 
 
 async def delete_message(context: CallbackContext, chat_id, message_id):
-    """Deletes the message that triggered the command.
-
-    Args:
-        context (CallbackContext): _description_
-        chat_id (_type_): _description_
-        message_id (_type_): _description_
-    """
+    """Deletes the message that triggered the command."""
     await context.bot.delete_message(
         chat_id=chat_id,
         message_id=message_id,
@@ -111,13 +107,7 @@ async def delete_message(context: CallbackContext, chat_id, message_id):
 
 
 async def get_random_entry(update: Update, context: CallbackContext, config):
-    """Creates a random entry from the diary and sends it to the user.
-
-    Args:
-        update (Update): _description_
-        context (CallbackContext): _description_
-        config (_type_): _description_
-    """
+    """Gets a random entry from the diary and sends it to the user."""
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
         diary = get_diary(config)
@@ -137,13 +127,7 @@ async def get_random_entry(update: Update, context: CallbackContext, config):
 
 
 async def get_stats(update: Update, context: CallbackContext, config):
-    """Generates a table with the number of entries per day and sends it to the user.
-
-    Args:
-        update (Update): _description_
-        context (CallbackContext): _description_
-        config (_type_): _description_
-    """
+    """Generates two plots with the number of entries per day and sends it to the user."""
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
         diary = get_diary(config)

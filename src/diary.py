@@ -6,9 +6,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from openai_tools import add_embedding, get_embedding
 from telegram import Update
 from telegram.ext import CallbackContext
+
+from openai_tools import add_embedding, get_embedding
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
