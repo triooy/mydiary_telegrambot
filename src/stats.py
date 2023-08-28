@@ -3,7 +3,7 @@ import plotly.express as px
 import pytz
 
 
-def get_stats(diary: pd.DataFrame):
+def make_stats(diary: pd.DataFrame):
     word_count = diary["entry"].str.split().str.len().sum()
     entries = len(diary)
     mean_words = round(word_count / entries, 2)
