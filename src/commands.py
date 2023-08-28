@@ -11,7 +11,7 @@ from diary import correct_chat, get_diary
 from openai_tools import get_similar_entries, search_entries
 from pdf import create_pdf
 from search import get_entry_by_date, search_by_date, send_day_before_and_after
-from stats import get_stats
+from stats import make_stats
 from telegram import Update
 from telegram.ext import CallbackContext
 
@@ -131,7 +131,7 @@ async def get_stats(update: Update, context: CallbackContext, config):
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
         diary = get_diary(config)
-        stats, entries_per_weekday, entries_per_month = get_stats(diary)
+        stats, entries_per_weekday, entries_per_month = make_stats(diary)
 
         await context.bot.send_message(chat_id=chat_id, text=stats)
         await context.bot.send_photo(
