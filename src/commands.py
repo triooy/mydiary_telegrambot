@@ -48,6 +48,7 @@ async def daily(update: Update, context: CallbackContext, config) -> None:
     """Sets a daily job to send a entry for the current day at 8:30."""
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
+        logger.info("Set daily job")
         context.job_queue.run_daily(
             partial(daily_job, config=config),
             time(hour=8, minute=30, tzinfo=pytz.timezone("Europe/Amsterdam")),
@@ -62,6 +63,7 @@ async def get_data(update: Update, context: CallbackContext, config) -> None:
     """Sends all diary data as zip file."""
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
+        logger.info("get_data")
         # zip data send
         current_date = datetime.now().date()
         zip = shutil.make_archive(
@@ -75,6 +77,7 @@ async def daily_job(context: CallbackContext, config) -> None:
     today = datetime.now().date()
     diary_today = get_entry_by_date(today, config)
     if len(diary_today) > 0:
+        logger.info("Run daily job...")
         if len(diary_today) == 1:
             entry = diary_today
         else:
@@ -110,6 +113,7 @@ async def get_random_entry(update: Update, context: CallbackContext, config):
     """Gets a random entry from the diary and sends it to the user."""
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
+        logger.info("get_random_entry")
         diary = get_diary(config)
         random_entry = diary.sample()
         intro = (
@@ -130,6 +134,7 @@ async def get_stats(update: Update, context: CallbackContext, config):
     """Generates two plots with the number of entries per day and sends it to the user."""
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
+        logger.info("get_stats")
         diary = get_diary(config)
         stats, entries_per_weekday, entries_per_month = make_stats(diary)
 
@@ -158,6 +163,7 @@ async def pdf(update: Update, context: CallbackContext, config):
     """Creates a pdf from the diary and sends it to the user."""
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
+        logger.info("create pdf...")
         diary = get_diary(config)
         # read parameters from message -s for start_date and -e for end_date
         args = context.args
@@ -176,6 +182,7 @@ async def search(update: Update, context: CallbackContext, config):
     """Searches for entries for a given date."""
     chat_id = update.message.chat_id
     if correct_chat(chat_id, config):
+        logger.info("search...")
         date = update.message.text
         date = date.replace("_", ".").replace("/", "")
         diary = get_diary(config)

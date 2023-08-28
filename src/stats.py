@@ -2,6 +2,9 @@ import pandas as pd
 import plotly.express as px
 import pytz
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def make_stats(diary: pd.DataFrame):
     word_count = diary["entry"].str.split().str.len().sum()
@@ -26,8 +29,9 @@ def make_stats(diary: pd.DataFrame):
     distrubution_over_weekdays = (
         distrubution_over_weekdays.to_frame()
         .reset_index()
-        .rename(columns={"index": "weekday", "date": "entries"})
+        .rename(columns={"date": "weekday", "count": "entries"})
     )
+    logger.debug(distrubution_over_weekdays)
 
     fig = px.bar(
         distrubution_over_weekdays,
@@ -65,8 +69,9 @@ def make_stats(diary: pd.DataFrame):
     distrubution_over_months = (
         distrubution_over_months.to_frame()
         .reset_index()
-        .rename(columns={"index": "month", "date": "entries"})
+        .rename(columns={"date": "month", "count": "entries"})
     )
+    logger.debug(distrubution_over_months)
     fig = px.bar(
         distrubution_over_months,
         x="month",
