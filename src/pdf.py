@@ -115,7 +115,7 @@ def render_toc(pdf, outline):
         p(
             pdf,
             f'{" " * section.level * 2} {section.name} {"." * (60 - section.level*2 - len(section.name))} {section.page_number}',
-            align="C",
+            align="L",
             link=link,
         )
 
@@ -156,9 +156,9 @@ def create_pdf(data, author, start_date=None, end_date=None):
     )
     pdf.set_font("Rokkitt", "B", 20)
     pdf.cell(5, 450, f"Herausgegeben: {date}", align="L", new_x="LMARGIN", new_y="NEXT")
-
+    pdf.add_page()
     number_of_entries = len(data)
-    table_of_contents_pages = int(number_of_entries / 100) + 1
+    table_of_contents_pages = max(1, int(number_of_entries / 100))
 
     pdf.insert_toc_placeholder(render_toc, table_of_contents_pages)
 

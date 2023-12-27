@@ -1,5 +1,5 @@
 import openai
-from openai.embeddings_utils import cosine_similarity
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 def get_embedding(text, model="text-embedding-ada-002"):
