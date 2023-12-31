@@ -32,6 +32,9 @@ def create_diary_entry(text, insert_time=True):
     logger.info(f"New diary entry created: {df}")
     return df
 
+def get_month_data(data, month, year):
+    month_data = data[(data['date'].dt.month == month) & (data['date'].dt.year == year)]
+    return month_data
 
 def get_diary(config):
     """Get the diary of the user."""

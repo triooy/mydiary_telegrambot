@@ -7,13 +7,15 @@ from pathlib import Path
 
 import pytz
 import telegram
-from diary import correct_chat, get_diary
+from diary import correct_chat, get_diary, get_month_data
 from openai_tools import get_similar_entries, search_entries
 from pdf import create_pdf
 from search import get_entry_by_date, search_by_date, send_day_before_and_after
 from stats import make_stats
 from telegram import Update
 from telegram.ext import CallbackContext
+from prompt_template import get_prompt
+from replicate import Client
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -29,6 +31,7 @@ async def help(update: Update, context: CallbackContext, config) -> None:
         text = """Hi! I'm your personal diary bot. I can help you keep a diary and remind you to write in it. 
         \n\nHere are the commands I understand:
         \n`/daily` - I will send you every day a diary entry created on this day in the past at 8:30.
+        \n `/monthly_report` - I will send you a monthly report of your diary
         \n`/random` - I will send you a random entry from your diary
         \n`/get_data` - I will send you your diary as a csv file and your images zipped
         \n`/stats` - I will send you a plot of your entries per day
@@ -58,6 +61,20 @@ async def daily(update: Update, context: CallbackContext, config) -> None:
         await context.bot.send_message(chat_id=chat_id, text="Daily memory set!")
         await delete_message(context, update.message.chat_id, update.message.message_id)
 
+async def monthly_report(update: Update, context: CallbackContext, config) -> None:
+    """Sends a monthly report of the diary."""
+    chat_id = update.message.chat_id
+    if correct_chat(chat_id, config):
+        logger.info("Set monthly report")
+        context.job_queue.run_monthly(
+            callback=partial(monthly_report_job, config=config),
+            when=time(hour=18, minute=20, tzinfo=pytz.timezone("Europe/Amsterdam")),
+            day=31, 
+            chat_id=chat_id,
+            name=str(chat_id),
+        )
+        await context.bot.send_message(chat_id=chat_id, text="Monthly report set!")
+        await delete_message(context, update.message.chat_id, update.message.message_id)
 
 async def get_data(update: Update, context: CallbackContext, config) -> None:
     """Sends all diary data as zip file."""
@@ -100,6 +117,32 @@ async def daily_job(context: CallbackContext, config) -> None:
             context.job.chat_id, text="No entry for today, you should write one!"
         )
 
+async def monthly_report_job(context: CallbackContext, config) -> None:
+    today = datetime.now().date()
+    year = today.year
+    month = today.month
+    diary = get_diary(config)
+    month_data = get_month_data(diary, month, year)
+    month_data.loc[:, 'entry'] = month_data.apply(lambda x: f"{x['date'].strftime('%d/%m/%Y')}\n{x['entry']}", axis=1)
+    entries = "\n\n".join(month_data['entry'].values)
+    name = config['author'].split(" ")[0]
+    prompt = get_prompt().format(name=name)
+    prompt += "\n\nTagebucheinträge:\n\n" + entries
+    client = Client(api_token=config['replicate_key'])
+    output = client.run(
+        "mistralai/mixtral-8x7b-instruct-v0.1:7b3212fbaf88310cfef07a061ce94224e82efc8403c26fc67e8f6c065de51f21",
+        input={
+            #"top_k": 50,
+            #"top_p": 1.2,
+            "prompt": prompt,
+            "temperature": 0.35,
+            "max_new_tokens": 2048,
+            "prompt_template": "<s>[INST] {prompt} [/INST] ",
+            }
+        )
+    res = "".join([c for c in output])
+    await send_message(res, context, config, job=True)
+    
 
 async def delete_message(context: CallbackContext, chat_id, message_id):
     """Deletes the message that triggered the command."""

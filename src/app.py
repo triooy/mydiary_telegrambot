@@ -32,6 +32,9 @@ def main():
         CommandHandler("daily", partial(commands.daily, config=config))
     )
     dispatcher.add_handler(
+        CommandHandler("monthly_report", partial(commands.monthly_report, config=config))
+    )
+    dispatcher.add_handler(
         CommandHandler("random", partial(commands.get_random_entry, config=config))
     )
     dispatcher.add_handler(
