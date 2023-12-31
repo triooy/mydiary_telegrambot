@@ -68,8 +68,8 @@ async def monthly_report(update: Update, context: CallbackContext, config) -> No
         logger.info("Set monthly report")
         context.job_queue.run_monthly(
             callback=partial(monthly_report_job, config=config),
-            when=time(hour=18, minute=20, tzinfo=pytz.timezone("Europe/Amsterdam")),
-            day=31, 
+            when=time(hour=8, minute=15, tzinfo=pytz.timezone("Europe/Amsterdam")),
+            day=1, 
             chat_id=chat_id,
             name=str(chat_id),
         )
@@ -123,6 +123,15 @@ async def monthly_report_job(context: CallbackContext, config) -> None:
     month = today.month
     diary = get_diary(config)
     month_data = get_month_data(diary, month, year)
+    
+    # send stats
+    word_count = month_data["entry"].str.split().str.len().sum()
+    entries = len(month_data)
+    mean_words = round(word_count / entries, 2)
+    stats = f"Stats:\n\nNumber of entries: {entries}\nNumber of words: {word_count}\nMean words per entry: {mean_words}"
+    await context.bot.send_message(chat_id=context.job.chat_id, text=stats)
+    
+    # create summary
     month_data.loc[:, 'entry'] = month_data.apply(lambda x: f"{x['date'].strftime('%d/%m/%Y')}\n{x['entry']}", axis=1)
     entries = "\n\n".join(month_data['entry'].values)
     name = config['author'].split(" ")[0]
