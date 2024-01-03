@@ -121,6 +121,12 @@ async def monthly_report_job(context: CallbackContext, config) -> None:
     today = datetime.now().date()
     year = today.year
     month = today.month
+    # substract one month to get the previous month
+    month = month - 1 
+    if month == 0:
+        month = 12
+        year = year - 1
+        
     diary = get_diary(config)
     month_data = get_month_data(diary, month, year)
     
