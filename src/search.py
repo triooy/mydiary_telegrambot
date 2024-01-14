@@ -13,7 +13,7 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-
+MAX_LENGTH = 2500
 
 async def send_day_before_and_after(entry, context, config):
     # send dates day before and after
@@ -86,7 +86,8 @@ async def search_by_date(
         pretext = f"Here is what you wrote in {entry['date'].dt.date.values[0]}:\n\n"
         text = pretext + text
         if send:
-            await update.message.reply_text(text=text)
+            for i in range(0, len(text), MAX_LENGTH):
+                await update.message.reply_text(text=text[i: i + MAX_LENGTH])
             images = entry["images"].values[0]
             if len(images) > 0:
                 for image in images:
