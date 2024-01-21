@@ -120,7 +120,7 @@ def render_toc(pdf, outline):
         )
 
 
-def create_pdf(data, author, start_date=None, end_date=None):
+def create_pdf(data, author, start_date=None, end_date=None, table_of_contents_pages=5):
 
     if start_date:
         # convert to datetime: str:22.02.2020
@@ -157,9 +157,6 @@ def create_pdf(data, author, start_date=None, end_date=None):
     pdf.set_font("Rokkitt", "B", 20)
     pdf.cell(5, 450, f"Herausgegeben: {date}", align="L", new_x="LMARGIN", new_y="NEXT")
     pdf.add_page()
-    number_of_entries = len(data)
-    table_of_contents_pages = max(1, int(number_of_entries / 100))
-
     pdf.insert_toc_placeholder(render_toc, table_of_contents_pages)
 
     pdf.set_col(0)

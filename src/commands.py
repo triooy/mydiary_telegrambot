@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytz
 import telegram
+import fpdf
 from diary import correct_chat, get_diary, get_month_data
 from openai_tools import get_similar_entries, search_entries
 from pdf import create_pdf
@@ -231,7 +232,18 @@ async def pdf(update: Update, context: CallbackContext, config):
             start_date = args[args.index("-s") + 1]
         if "-e" in args:
             end_date = args[args.index("-e") + 1]
-        pdf_path = create_pdf(diary, config["author"], start_date, end_date)
+        try:
+            pdf_path = create_pdf(diary, config["author"], start_date, end_date, table_of_contents_pages=5)
+        except fpdf.errors.FPDFException as e:
+            logger.error(e)
+            # extract toc number of pages from error message
+            if "ended on page" in str(e):
+                toc_pages = int(str(e).split("ended on page ")[1].split(" ")[0]) - 1
+                logger.info(f"TOC has {toc_pages} pages")
+                pdf_path = create_pdf(diary, config["author"], start_date, end_date, table_of_contents_pages=toc_pages)
+            else:
+                raise e
+            
         await context.bot.send_document(chat_id=chat_id, document=open(pdf_path, "rb"))
         await delete_message(context, update.message.chat_id, update.message.message_id)
 
