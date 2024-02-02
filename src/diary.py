@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 from telegram import Update
 from telegram.ext import CallbackContext
+from prompt_template import get_prompt
+from openai import OpenAI
 
 from openai_tools import add_embedding, get_embedding
 
@@ -60,7 +62,24 @@ def save_diary(df, config):
     df = df.drop(columns=["embedding"])
     df.to_csv(config.get("diary_csv"), index=False)
 
-
+def get_report(data, config):
+    # create summary
+    data.loc[:, 'entry'] = data.apply(lambda x: f"{x['date'].strftime('%d/%m/%Y')}\n{x['entry']}", axis=1)
+    entries = "\n\n".join(data['entry'].values)
+    name = config['author'].split(" ")[0]
+    prompt = get_prompt().format(name=name)
+    entries = "\n\n##### Tagebucheinträge #####\n\n" + entries + "\n\n##### Ende der Tagebucheinträge #####\n\n"
+    client = OpenAI(api_key=config['openai_key'])
+    response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": get_prompt().format(name=name)},
+        {"role": "user", "content": entries},
+    ]
+    )
+    res = response.choices[0].message.content
+    return res
+    
 async def process_new_text(update: Update, context: CallbackContext, config):
     """Process the new text from the user."""
     # process the new text from the user

@@ -2,7 +2,7 @@ import logging
 from functools import partial
 from pathlib import Path
 
-import commands
+import commands, os
 import openai
 from diary import *
 from pyhocon import ConfigFactory
@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 config = ConfigFactory.parse_file(Path("config/config.conf"))
 api_key = config.get("api_key")
 openai.api_key = config.get("openai_key")
+# set env OPENAI_API_KEY to your openai key
+os.environ["OPENAI_API_KEY"] = config.get("openai_key")
 
 
 def main():
@@ -47,6 +49,7 @@ def main():
         CommandHandler("help", partial(commands.help, config=config))
     )
     dispatcher.add_handler(CommandHandler("pdf", partial(commands.pdf, config=config)))
+    dispatcher.add_handler(CommandHandler("report", partial(commands.create_report_for_time, config=config)))
 
     dispatcher.add_handler(
         CommandHandler("search", partial(commands.search_words, config=config))

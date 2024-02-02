@@ -8,7 +8,7 @@ from pathlib import Path
 import pytz
 import telegram
 import fpdf
-from diary import correct_chat, get_diary, get_month_data
+from diary import correct_chat, get_diary, get_month_data, get_report
 from openai_tools import get_similar_entries, search_entries
 from pdf import create_pdf
 from search import get_entry_by_date, search_by_date, send_day_before_and_after
@@ -16,7 +16,7 @@ from stats import make_stats
 from telegram import Update
 from telegram.ext import CallbackContext
 from prompt_template import get_prompt
-from replicate import Client
+
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -40,6 +40,7 @@ async def help(update: Update, context: CallbackContext, config) -> None:
         \n`/2_2_2020` - I will send you the entry for the given date
         \n`/2_2_2020s_2` - I will send you the entry for the given date and two similar entries
         \n`/search I am happy -n 2` - I will send you the the most similar entries containing the given query
+        \n`/report -s 19.01.2012 -e 22.12.2022` - I will send you a analysis of your diary for the given time period
         \n`/help` - I will send you this message
         """
         await context.bot.send_message(
@@ -131,34 +132,43 @@ async def monthly_report_job(context: CallbackContext, config) -> None:
     diary = get_diary(config)
     month_data = get_month_data(diary, month, year)
     
+    report = get_report(month_data, config)
+    
     # send stats
     word_count = month_data["entry"].str.split().str.len().sum()
     entries = len(month_data)
     mean_words = round(word_count / entries, 2)
     stats = f"Stats:\n\nNumber of entries: {entries}\nNumber of words: {word_count}\nMean words per entry: {mean_words}"
     await context.bot.send_message(chat_id=context.job.chat_id, text=stats)
-    
-    # create summary
-    month_data.loc[:, 'entry'] = month_data.apply(lambda x: f"{x['date'].strftime('%d/%m/%Y')}\n{x['entry']}", axis=1)
-    entries = "\n\n".join(month_data['entry'].values)
-    name = config['author'].split(" ")[0]
-    prompt = get_prompt().format(name=name)
-    prompt += "\n\nTagebucheinträge:\n\n" + entries
-    client = Client(api_token=config['replicate_key'])
-    output = client.run(
-        "mistralai/mixtral-8x7b-instruct-v0.1:7b3212fbaf88310cfef07a061ce94224e82efc8403c26fc67e8f6c065de51f21",
-        input={
-            #"top_k": 50,
-            #"top_p": 1.2,
-            "prompt": prompt,
-            "temperature": 0.35,
-            "max_new_tokens": 2048,
-            "prompt_template": "<s>[INST] {prompt} [/INST] ",
-            }
-        )
-    res = "".join([c for c in output])
-    await send_message(res, context, config, job=True)
-    
+    # send report
+    await send_message(report, context, config, job=True)
+
+async def create_report_for_time(update: Update, context: CallbackContext, config):
+    chat_id = update.message.chat_id
+    if correct_chat(chat_id, config):
+        logger.info("create report...")
+        data = get_diary(config)
+        # read parameters from message -s for start_date and -e for end_date
+        args = context.args
+        start_date = None
+        end_date = None
+        if "-s" in args:
+            start_date = args[args.index("-s") + 1]
+        if "-e" in args:
+            end_date = args[args.index("-e") + 1]
+            
+        logger.info(f"start_date: {start_date}, end_date: {end_date}")
+        if start_date:
+            # convert to datetime: str:22.02.2020
+            start_date = datetime.strptime(start_date, "%d.%m.%Y")
+            data = data[(data["date"] >= start_date)]
+        if end_date:
+            end_date = datetime.strptime(end_date, "%d.%m.%Y")
+            data = data[(data["date"] <= end_date)]
+            
+        report = get_report(data, config)
+        await send_message(report, context, config)
+        await delete_message(context, update.message.chat_id, update.message.message_id)
 
 async def delete_message(context: CallbackContext, chat_id, message_id):
     """Deletes the message that triggered the command."""
@@ -315,7 +325,8 @@ async def search_words(update: Update, context: CallbackContext, config):
         similar_entries = search_entries(diary, search_query, n)
 
         for entry in similar_entries.iterrows():
-            text = f"Here is a similar entry from {entry[1]['date'].date().strftime('%d.%m.%Y')} with similarity {round(entry[1]['similarity'], 3)}:\n\n"
+            logger.info(entry)
+            text = f"Here is a similar entry from {entry[1]['date'].date().strftime('%d.%m.%Y')} with similarity {round(entry[1]['similarity'][0][0], 3)}:\n\n"
             text = text + str(entry[1]["entry"])
 
             await send_message(text, context, config)
